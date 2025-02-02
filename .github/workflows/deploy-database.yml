@@ -1,0 +1,33 @@
+name: Deploy Database
+
+# This workflow will run on push to the main branch and deploy to a specific environment (e.g., TEST, UAT, PROD)
+# Ensure the correct connection string is used by managing it through GitHub Secrets
+# Example: secrets.TEST_SQL_CONNECTION, secrets.UAT_SQL_CONNECTION, secrets.PROD_SQL_CONNECTION
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install .NET SDK
+        run: sudo apt-get update && sudo apt-get install -y dotnet-sdk-6.0
+
+      - name: Setup .NET Project
+        run: |
+          if [ ! -d "DbUpMigration" ]; then
+            dotnet new console -n DbUpMigration
+            cd DbUpMigration
+            dotnet add package DbUp
+          fi
+
+      - name: Apply Database Migrations
+        env:
+          CONNECTION_STRING: ${{ secrets.TEST_SQL_CONNECTION }}
+        run: dotnet run --project DbUpMigration
